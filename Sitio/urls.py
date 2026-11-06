@@ -12,4 +12,5 @@ urlpatterns = [
     path('buscar/', views.buscar, name='buscar'),
     path('maquillaje/', views.maquillaje, name='maquillaje'),
     path('404/', views.buscar, name='404'),
+    path('logout/', views.logout_view, name='logout'),
 ]

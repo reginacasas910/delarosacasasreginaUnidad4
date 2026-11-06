@@ -2,8 +2,18 @@ from django.shortcuts import render, redirect
 from .models import Producto, Usuario, Contacto
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
+from functools import wraps
 
 # Create your views here.
+def usuario_requerido(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.session.get("usuario_id"):
+            return redirect("login")
+
+        return view_func(request, *args, **kwargs)
+
+    return wrapper
 
 def inicio(request):
     productos = Producto.objects.all()
@@ -19,9 +29,7 @@ def maquillaje(request):
         'productos': productos
     })
 
-from django.contrib.auth.decorators import login_required
-
-@login_required(login_url='login')
+@usuario_requerido
 def buscar(request):
     termino = request.GET.get('q', '')
 
@@ -137,3 +145,7 @@ def recuperar(request):
 
 def mapa_sitio(request):
     return render(request, 'mapa_sitio.html')
+
+def logout_view(request):
+    request.session.flush()
+    return redirect('login')
