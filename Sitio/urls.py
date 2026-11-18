@@ -13,4 +13,9 @@ urlpatterns = [
     path('maquillaje/', views.maquillaje, name='maquillaje'),
     path('404/', views.buscar, name='404'),
     path('logout/', views.logout_view, name='logout'),
+    path('api/productos/', views.api_productos, name='api_productos'),
+    path('api/productos/<int:id>/', views.api_producto_detalle, name='api_producto_detalle'),
+    path('carrito/', views.carrito, name='carrito'),
+    path('carrito/agregar/<int:producto_id>/', views.agregar_al_carrito, name='agregar_al_carrito'),
+    path('carrito/eliminar/<int:producto_id>/', views.eliminar_del_carrito, name='eliminar_del_carrito'),
 ]
