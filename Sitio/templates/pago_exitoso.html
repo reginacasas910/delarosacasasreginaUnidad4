@@ -1,0 +1,16 @@
+
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="mensaje-pago">
+    <h2>¡Pago realizado correctamente!</h2>
+
+    <p>Gracias por comprar en nuestra tienda de belleza.</p>
+
+    <a href="{% url 'inicio' %}">
+        Regresar al inicio
+    </a>
+</div>
+
+{% endblock %}

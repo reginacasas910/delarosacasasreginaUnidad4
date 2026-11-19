@@ -52,8 +52,11 @@
                 ${{ producto.precio }}
             </div>
 
-            <button type="button"
-                style="
+
+            <form method="POST" action="{% url 'agregar_al_carrito' producto.id %}">
+                {% csrf_token %}
+
+                <button type="submit" style="
                     width: 90%;
                     margin: 15px auto 0;
                     display: block;
@@ -68,8 +71,9 @@
                     cursor: pointer;
                     transition: all 0.3s ease;
                 ">
-                + Añadir al carrito
-            </button>
+                    + Añadir al carrito
+                </button>
+            </form>
         </div>
 
         {% endfor %}

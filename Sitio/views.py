@@ -8,6 +8,11 @@ from .models import Producto, Usuario, Contacto
 from .serializers import ProductoSerializer
 from django.views.decorators.http import require_POST
 from decimal import Decimal
+import stripe
+import uuid
+from django.conf import settings
+from django.urls import reverse
+from django.http import HttpResponse
 
 @api_view(['GET'])
 def api_productos(request):
@@ -190,15 +195,13 @@ def logout_view(request):
 @usuario_requerido
 def carrito(request):
     carrito_session = request.session.get('carrito', {})
-
     productos_carrito = []
     total = Decimal('0.00')
 
     for producto_id, cantidad in carrito_session.items():
-
         try:
-            producto = Producto.objects.get(id=producto_id)
-        except Producto.DoesNotExist:
+            producto = Producto.objects.get(id=int(producto_id))
+        except (Producto.DoesNotExist, ValueError):
             continue
 
         subtotal = producto.precio * cantidad
@@ -227,12 +230,37 @@ def agregar_al_carrito(request, producto_id):
 
     producto_id = str(producto.id)
 
-    carrito[producto_id] = carrito.get(producto_id, 0) + 1
+    carrito[producto_id] = int(carrito.get(producto_id, 0)) + 1
 
     request.session['carrito'] = carrito
+    request.session.modified = True
 
     return redirect('carrito')
 
+@usuario_requerido
+@require_POST
+def actualizar_carrito(request, producto_id):
+
+    carrito = request.session.get('carrito', {})
+
+    producto_id = str(producto_id)
+
+    if producto_id in carrito:
+        try:
+            cantidad = int(request.POST.get('cantidad', 1))
+
+            if cantidad <= 0:
+                carrito.pop(producto_id)
+            elif cantidad <= 99:
+                carrito[producto_id] = cantidad
+
+        except (ValueError, TypeError):
+            pass
+
+    request.session['carrito'] = carrito
+    request.session.modified = True
+
+    return redirect('carrito')
 
 @usuario_requerido
 @require_POST
@@ -243,5 +271,122 @@ def eliminar_del_carrito(request, producto_id):
     carrito.pop(str(producto_id), None)
 
     request.session['carrito'] = carrito
+    request.session.modified = True
 
     return redirect('carrito')
+
+@usuario_requerido
+@require_POST
+def crear_pago(request):
+
+    stripe.api_key = settings.STRIPE_SECRET_KEY
+
+    if not stripe.api_key:
+        return HttpResponse(
+            "No se ha configurado la clave de Stripe.",
+            status=500
+        )
+
+    carrito = request.session.get('carrito', {})
+
+    if not carrito:
+        return redirect('carrito')
+
+    line_items = []
+
+    try:
+        for producto_id, cantidad in carrito.items():
+
+            producto = get_object_or_404(
+                Producto,
+                id=int(producto_id)
+            )
+
+            cantidad = int(cantidad)
+
+            if cantidad < 1 or cantidad > 99:
+                return HttpResponse("Cantidad no válida.", status=400)
+
+            precio_centavos = int(
+                (producto.precio * 100).quantize(Decimal('1'))
+            )
+
+            line_items.append({
+                'price_data': {
+                    'currency': settings.STRIPE_CURRENCY,
+                    'product_data': {
+                        'name': producto.nombre,
+                        'description': producto.descripcion[:500],
+                    },
+                    'unit_amount': precio_centavos,
+                },
+                'quantity': cantidad,
+            })
+
+        sesion = stripe.checkout.Session.create(
+            line_items=line_items,
+            mode='payment',
+            success_url=request.build_absolute_uri(
+                reverse('pago_exitoso')
+            ) + '?session_id={CHECKOUT_SESSION_ID}',
+
+            cancel_url=request.build_absolute_uri(
+                reverse('pago_cancelado')
+            ),
+
+            metadata={
+                'usuario_id': str(request.session['usuario_id'])
+            }
+        )
+
+        return redirect(sesion.url, permanent=False)
+
+    except stripe.error.StripeError as error:
+        return HttpResponse(
+            "No fue posible iniciar el pago: " + str(error),
+            status=400
+        )
+    except (ValueError, TypeError):
+        return HttpResponse(
+            "Los datos del carrito no son válidos.",
+            status=400
+        )
+
+
+@usuario_requerido
+def pago_exitoso(request):
+
+    session_id = request.GET.get('session_id')
+
+    if not session_id:
+        return redirect('carrito')
+
+    stripe.api_key = settings.STRIPE_SECRET_KEY
+
+    try:
+        sesion = stripe.checkout.Session.retrieve(session_id)
+
+        if (
+            sesion.payment_status == 'paid'
+            and sesion.metadata.get('usuario_id')
+            == str(request.session['usuario_id'])
+        ):
+            request.session['carrito'] = {}
+            request.session.modified = True
+
+            return render(request, 'pago_exitoso.html')
+
+        return HttpResponse(
+            "El pago todavía no ha sido confirmado.",
+            status=400
+        )
+
+    except stripe.error.StripeError:
+        return HttpResponse(
+            "No se pudo verificar el pago.",
+            status=400
+        )
+
+@usuario_requerido
+def pago_cancelado(request):
+    return render(request, 'pago_cancelado.html')

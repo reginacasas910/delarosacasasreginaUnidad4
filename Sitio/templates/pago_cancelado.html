@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="mensaje-pago">
+    <h2>Pago cancelado</h2>
+
+    <p>Tu compra no se completó. Tus productos siguen en el carrito.</p>
+
+    <a href="{% url 'carrito' %}">
+        Regresar al carrito
+    </a>
+</div>
+
+{% endblock %}

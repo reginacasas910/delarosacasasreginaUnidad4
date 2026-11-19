@@ -41,9 +41,9 @@ nav{
 
 .menu{
     display:flex;
-    justify-content:center;
+    justify-content:left;
     align-items:center;
-    gap:40px;
+    gap:30px;
     list-style:none;
 }
 
@@ -572,4 +572,94 @@ footer{
     background:#e67e22;
     color:white;
     border-color:#e67e22;
+}
+
+
+/* CONTENEDOR DEL CARRITO */
+
+.contenedor-carrito {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 25px;
+    background: white;
+    border-radius: 12px;
+}
+
+.contenedor-carrito h2 {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.producto-carrito {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 20px 0;
+}
+
+.info-producto {
+    flex: 1;
+}
+
+.acciones-carrito {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.acciones-carrito input {
+    width: 65px;
+    padding: 8px;
+}
+
+.acciones-carrito button,
+.btn-carrito,
+.btn-pagar {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 6px;
+    background: #c77d91;
+    color: white;
+    cursor: pointer;
+}
+
+.acciones-carrito button:hover,
+.btn-carrito:hover,
+.btn-pagar:hover {
+    background: #a95770;
+}
+
+.total-carrito {
+    text-align: right;
+    margin-top: 30px;
+}
+
+.total-carrito h3 {
+    font-size: 24px;
+}
+
+.btn-pagar {
+    font-size: 16px;
+    margin-top: 15px;
+}
+
+.mensaje-pago {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.mensaje-pago h2 {
+    color: #a95770;
+}
+
+@media (max-width: 650px) {
+    .producto-carrito {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .acciones-carrito {
+        width: 100%;
+    }
 }
